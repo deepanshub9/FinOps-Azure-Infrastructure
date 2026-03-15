@@ -79,27 +79,17 @@ resource "azurerm_role_assignment" "acr_pull" {
   principal_id         = module.aks.kubelet_identity_object_id
 }
 
-resource "azurerm_monitor_diagnostic_setting" "aks_control_plane" {
-  name                       = "diag-aks-control-plane"
-  target_resource_id         = module.aks.cluster_id
-  log_analytics_workspace_id = module.observability.log_analytics_workspace_id
-
-  enabled_log {
-    category = "kube-apiserver"
-  }
-
-  enabled_log {
-    category = "kube-controller-manager"
-  }
-
-  enabled_log {
-    category = "kube-scheduler"
-  }
-
-  enabled_metric {
-    category = "AllMetrics"
-  }
-}
+# COST REDUCTION: AKS control-plane diagnostic settings disabled for dev.
+# Re-enable by uncommenting when needed for debugging (adds ~$10/week to Log Analytics bill).
+# resource "azurerm_monitor_diagnostic_setting" "aks_control_plane" {
+#   name                       = "diag-aks-control-plane"
+#   target_resource_id         = module.aks.cluster_id
+#   log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+#   enabled_log { category = "kube-apiserver" }
+#   enabled_log { category = "kube-controller-manager" }
+#   enabled_log { category = "kube-scheduler" }
+#   enabled_metric { category = "AllMetrics" }
+# }
 
 resource "azurerm_consumption_budget_resource_group" "this" {
   name              = "budget-${local.base_name}"
