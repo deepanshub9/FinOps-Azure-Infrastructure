@@ -9,7 +9,6 @@ spec:
     spec:
       containers:
         - name: app
-          image: acrrealusedevmfebl.azurecr.io/cloud-cost-advisor:20260315175139
           resources:
             requests:
               cpu: 75m

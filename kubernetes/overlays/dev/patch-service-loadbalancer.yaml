@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-cost-advisor
+  namespace: dev
+spec:
+  type: LoadBalancer

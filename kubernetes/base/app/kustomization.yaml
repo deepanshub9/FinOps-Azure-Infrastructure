@@ -1,6 +1,7 @@
 resources:
   - serviceaccount-rbac.yaml
   - configmap.yaml
+  - secretproviderclass-azure-kv.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml

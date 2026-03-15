@@ -8,7 +8,6 @@ APP_DIR="${ROOT_DIR}/apps/cloud-cost-advisor"
 APP_NAME="cloud-cost-advisor"
 
 : "${BUDGET_ALERT_EMAIL:?Set BUDGET_ALERT_EMAIL}"
-: "${APP_DOMAIN:?Set APP_DOMAIN}"
 : "${TF_BACKEND_RESOURCE_GROUP:?Set TF_BACKEND_RESOURCE_GROUP}"
 : "${TF_BACKEND_STORAGE_ACCOUNT:?Set TF_BACKEND_STORAGE_ACCOUNT}"
 : "${TF_BACKEND_CONTAINER:?Set TF_BACKEND_CONTAINER}"
@@ -52,7 +51,11 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
 kubectl apply -k "${K8S_DIR}"
 kubectl -n dev set image deployment/${APP_NAME} app="${ACR_NAME}.azurecr.io/${APP_NAME}:${IMAGE_TAG}"
 kubectl patch clusterissuer letsencrypt-staging --type merge -p "{\"spec\":{\"acme\":{\"email\":\"${BUDGET_ALERT_EMAIL}\"}}}"
-kubectl -n dev patch ingress ${APP_NAME} --type json -p "[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"${APP_DOMAIN}\"},{\"op\":\"replace\",\"path\":\"/spec/tls/0/hosts/0\",\"value\":\"${APP_DOMAIN}\"}]"
+if [[ -n "${APP_DOMAIN:-}" ]]; then
+  kubectl -n dev patch ingress ${APP_NAME} --type json -p "[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"${APP_DOMAIN}\"},{\"op\":\"replace\",\"path\":\"/spec/tls/0/hosts/0\",\"value\":\"${APP_DOMAIN}\"}]"
+else
+  echo "APP_DOMAIN not set; skipping ingress host patch."
+fi
 
 kubectl rollout status deployment/${APP_NAME} -n dev --timeout=240s
 
