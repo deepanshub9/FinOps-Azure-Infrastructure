@@ -2,11 +2,83 @@ grafana:
   adminPassword: "admin-change-me"
   service:
     type: ClusterIP
+  # Mount grafana-smtp secret as env vars (GF_SMTP_USER, GF_SMTP_PASSWORD)
+  extraEnvFrom:
+    - secretRef:
+        name: grafana-smtp
+  grafana.ini:
+    plugin.grafana-oncall-app:
+      enabled: false
+    smtp:
+      enabled: true
+      host: smtp.gmail.com:587
+      user: 20109458@mail.wit.ie
+      password: "$__env{GF_SMTP_PASSWORD}"
+      from_address: 20109458@mail.wit.ie
+      from_name: Grafana Alerts
+      startTLS_policy: MandatoryStartTLS
+  # Provision contact point so it survives pod restarts (emptyDir storage)
+  alerting:
+    contactpoints.yaml:
+      apiVersion: 1
+      contactPoints:
+        - orgId: 1
+          name: Deepanshu
+          receivers:
+            - uid: deepanshu-email
+              type: email
+              settings:
+                addresses: 20109458@mail.wit.ie
+              disableResolveMessage: false
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      node-exporter-full:
+        gnetId: 1860
+        revision: 37
+        datasource: Prometheus
+      kubernetes-cluster-monitoring:
+        gnetId: 6417
+        revision: 1
+        datasource: Prometheus
+      prometheus-2-0-stats:
+        gnetId: 3662
+        revision: 2
+        datasource: Prometheus
 
 alertmanager:
   enabled: true
   alertmanagerSpec:
     replicas: 1
+  config:
+    global:
+      smtp_smarthost: smtp.gmail.com:587
+      smtp_from: 20109458@mail.wit.ie
+      smtp_auth_username: 20109458@mail.wit.ie
+      smtp_auth_password: "<your-16-char-app-password>"
+      smtp_require_tls: true
+    route:
+      group_by: [alertname]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: email-alerts
+    receivers:
+      - name: email-alerts
+        email_configs:
+          - to: 20109458@mail.wit.ie
+            send_resolved: true
 
 prometheus:
   prometheusSpec:
