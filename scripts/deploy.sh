@@ -38,7 +38,10 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 
 kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --set controller.replicaCount=1
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --set controller.replicaCount=1 \
+  --set-string controller.service.annotations."service\\.beta\\.kubernetes\\.io/azure-load-balancer-health-probe-request-path"="/healthz"
 
 kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
 helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --set crds.enabled=true

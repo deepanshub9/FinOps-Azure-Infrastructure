@@ -3,6 +3,23 @@ kind: Ingress
 metadata:
   name: cloud-cost-advisor
   namespace: dev
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
+  tls:
+    - hosts:
+        - 20-74-9-244.nip.io
+      secretName: cloud-cost-advisor-tls
   rules:
-    - host: app.localtest.me
+    - host: 20-74-9-244.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-cost-advisor
+                port:
+                  number: 80
