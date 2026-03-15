@@ -21,12 +21,22 @@ spec:
       serviceAccountName: cloud-cost-advisor-sa
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: app
           image: cloud-cost-advisor:latest
           imagePullPolicy: IfNotPresent
+          env:
+            - name: DEMO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cloud-cost-advisor-akv
+                  key: demo-api-key
+                  optional: true
           ports:
             - containerPort: 8080
               name: http
@@ -68,8 +78,17 @@ spec:
               mountPath: /app/data
             - name: tmp
               mountPath: /tmp
+            - name: akv-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
       volumes:
         - name: data
           emptyDir: {}
         - name: tmp
           emptyDir: {}
+        - name: akv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: cloud-cost-advisor-akv

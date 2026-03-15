@@ -1,6 +1,12 @@
 resources:
   - ../../base
 
+images:
+  - name: cloud-cost-advisor
+    newName: acrrealusedevmfebl.azurecr.io/cloud-cost-advisor
+    newTag: "20260315175139"
+
 patches:
   - path: patch-deployment.yaml
   - path: patch-ingress.yaml
+  - path: patch-service-loadbalancer.yaml

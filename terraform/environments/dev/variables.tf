@@ -30,7 +30,7 @@ variable "node_count" {
 
 variable "max_pods" {
   type    = number
-  default = 30
+  default = 50
 }
 
 variable "log_retention_days" {
