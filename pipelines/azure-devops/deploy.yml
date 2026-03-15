@@ -1,0 +1,161 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: terraformDir
+    value: terraform/environments/dev
+  - name: kustomizeDir
+    value: kubernetes/overlays/dev
+  - name: appDir
+    value: apps/cloud-cost-advisor
+  - name: appName
+    value: cloud-cost-advisor
+  - name: tfBackendKey
+    value: dev.tfstate
+
+stages:
+  - stage: Validate
+    jobs:
+      - job: TerraformValidate
+        steps:
+          - task: AzureCLI@2
+            displayName: Terraform fmt/validate/plan
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                cd $(terraformDir)
+
+                terraform init \
+                  -backend-config="resource_group_name=$(TF_BACKEND_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_BACKEND_STORAGE_ACCOUNT)" \
+                  -backend-config="container_name=$(TF_BACKEND_CONTAINER)" \
+                  -backend-config="key=$(tfBackendKey)"
+
+                terraform fmt -check -recursive
+                terraform validate
+                terraform plan \
+                  -var="budget_alert_email=$(BUDGET_ALERT_EMAIL)" \
+                  -out=tfplan
+
+  - stage: ProvisionAndDeploy
+    dependsOn: Validate
+    jobs:
+      - job: Deploy
+        steps:
+          - task: AzureCLI@2
+            displayName: Terraform apply and get AKS credentials
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                cd $(terraformDir)
+
+                terraform init \
+                  -backend-config="resource_group_name=$(TF_BACKEND_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_BACKEND_STORAGE_ACCOUNT)" \
+                  -backend-config="container_name=$(TF_BACKEND_CONTAINER)" \
+                  -backend-config="key=$(tfBackendKey)"
+
+                terraform apply -auto-approve \
+                  -var="budget_alert_email=$(BUDGET_ALERT_EMAIL)"
+
+                RG_NAME=$(terraform output -raw resource_group_name)
+                AKS_NAME=$(terraform output -raw aks_cluster_name)
+                ACR_NAME=$(terraform output -raw acr_name)
+
+                az aks get-credentials --resource-group "$RG_NAME" --name "$AKS_NAME" --overwrite-existing
+                az acr login --name "$ACR_NAME"
+
+                echo "##vso[task.setvariable variable=RG_NAME]$RG_NAME"
+                echo "##vso[task.setvariable variable=AKS_NAME]$AKS_NAME"
+                echo "##vso[task.setvariable variable=ACR_NAME]$ACR_NAME"
+
+          - task: Bash@3
+            displayName: Build and push image
+            inputs:
+              targetType: inline
+              script: |
+                set -euo pipefail
+                IMAGE_TAG=$(Build.SourceVersion)
+                docker build -t $(ACR_NAME).azurecr.io/$(appName):${IMAGE_TAG} $(appDir)
+                docker push $(ACR_NAME).azurecr.io/$(appName):${IMAGE_TAG}
+                echo "##vso[task.setvariable variable=IMAGE_TAG]$IMAGE_TAG"
+
+          - task: Bash@3
+            displayName: Install ingress-nginx and cert-manager
+            inputs:
+              targetType: inline
+              script: |
+                set -euo pipefail
+                helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+                helm repo add jetstack https://charts.jetstack.io
+                helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                helm repo update
+
+                kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+                helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+                  --namespace ingress-nginx \
+                  --set controller.replicaCount=1
+
+                kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+                helm upgrade --install cert-manager jetstack/cert-manager \
+                  --namespace cert-manager \
+                  --set crds.enabled=true
+
+                kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+                helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+                  --namespace monitoring \
+                  -f $(kustomizeDir)/kube-prometheus-stack-values.yaml
+
+          - task: Bash@3
+            displayName: Deploy Kubernetes manifests
+            inputs:
+              targetType: inline
+              script: |
+                set -euo pipefail
+
+                kubectl apply -k $(kustomizeDir)
+                kubectl -n dev set image deployment/$(appName) app=$(ACR_NAME).azurecr.io/$(appName):$(IMAGE_TAG)
+                kubectl patch clusterissuer letsencrypt-staging --type merge -p '{"spec":{"acme":{"email":"$(BUDGET_ALERT_EMAIL)"}}}'
+                kubectl -n dev patch ingress $(appName) --type json -p '[{"op":"replace","path":"/spec/rules/0/host","value":"$(APP_DOMAIN)"},{"op":"replace","path":"/spec/tls/0/hosts/0","value":"$(APP_DOMAIN)"}]'
+                kubectl rollout status deployment/$(appName) -n dev --timeout=240s
+
+          - task: Bash@3
+            displayName: Smoke test
+            inputs:
+              targetType: inline
+              script: |
+                set -euo pipefail
+                kubectl get pods -n dev
+                kubectl get ingress -n dev
+                kubectl get pods -n monitoring
+
+  - stage: Rollback
+    dependsOn: ProvisionAndDeploy
+    condition: failed('ProvisionAndDeploy')
+    jobs:
+      - job: RollbackJob
+        steps:
+          - task: Bash@3
+            displayName: Rollback app deployment
+            inputs:
+              targetType: inline
+              script: |
+                set -euo pipefail
+                kubectl rollout undo deployment/$(appName) -n dev || true
+                kubectl rollout status deployment/$(appName) -n dev --timeout=180s || true

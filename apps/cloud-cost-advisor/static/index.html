@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud Cost Advisor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="eyebrow">FinOps Workspace</span>
+          <h1>Cloud Cost Advisor</h1>
+          <p>Track workload cost, spot waste quickly, and turn utilization data into clear optimization actions.</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="refreshBtn" class="btn secondary">Refresh Data</button>
+          <button id="seedDataBtn" class="btn primary">Load Demo Data</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="hero panel">
+          <div class="hero-copy">
+            <span class="section-kicker">Simple view for teams</span>
+            <h2>See where the money goes before monthly cloud cost surprises show up.</h2>
+            <p>
+              Keep one live view of workload cost, utilization, and shutdown coverage. The dashboard is designed for
+              engineering teams that need fast answers rather than raw spreadsheets.
+            </p>
+            <div class="hero-points">
+              <span class="chip">Cost visibility</span>
+              <span class="chip">Utilization signals</span>
+              <span class="chip">Savings opportunities</span>
+            </div>
+            <p id="statusMessage" class="status-message">Loading current workload insights...</p>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="visual-card visual-card-primary">
+              <span>Coverage</span>
+              <strong>Auto-shutdown</strong>
+              <small>Increase off-hours savings for low-risk services.</small>
+            </div>
+            <div class="visual-card visual-card-accent">
+              <span>Optimization</span>
+              <strong>Rightsize underused apps</strong>
+              <small>Use CPU and memory trends to reduce waste.</small>
+            </div>
+            <svg viewBox="0 0 320 220" class="hero-graphic" role="presentation">
+              <defs>
+                <linearGradient id="heroFill" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#0f6cbd" />
+                  <stop offset="100%" stop-color="#ff8a3d" />
+                </linearGradient>
+              </defs>
+              <rect x="30" y="34" width="260" height="152" rx="22" fill="#fff7ef" stroke="#d9d7d0" />
+              <rect x="54" y="70" width="42" height="92" rx="12" fill="url(#heroFill)" opacity="0.72" />
+              <rect x="110" y="96" width="42" height="66" rx="12" fill="#ffb347" opacity="0.88" />
+              <rect x="166" y="56" width="42" height="106" rx="12" fill="#3aa675" opacity="0.88" />
+              <rect x="222" y="86" width="42" height="76" rx="12" fill="#345995" opacity="0.9" />
+              <path d="M54 54 C98 24, 132 24, 166 64 S236 114, 264 74" fill="none" stroke="#1f2a37" stroke-width="8" stroke-linecap="round" />
+              <circle cx="92" cy="52" r="10" fill="#1f2a37" />
+              <circle cx="154" cy="54" r="10" fill="#1f2a37" />
+              <circle cx="238" cy="84" r="10" fill="#1f2a37" />
+            </svg>
+          </div>
+        </section>
+
+        <section class="summary panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Current snapshot</span>
+              <h2>Optimization Summary</h2>
+            </div>
+          </div>
+          <div class="cards" id="insightCards"></div>
+        </section>
+
+        <section class="panel form-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Add data</span>
+              <h2>Register a Workload</h2>
+              <p>Capture one service at a time so the dashboard can calculate savings and utilization trends.</p>
+            </div>
+          </div>
+          <form id="workloadForm" class="form-grid">
+            <label>Name<input required name="name" placeholder="checkout-service" /></label>
+            <label>Owner Team<input required name="owner_team" placeholder="payments" /></label>
+            <label>Provider
+              <select name="provider" required>
+                <option value="azure">Azure</option>
+                <option value="aws">AWS</option>
+                <option value="gcp">GCP</option>
+                <option value="onprem">On-Prem</option>
+              </select>
+            </label>
+            <label>Monthly Cost (USD)<input required type="number" min="0" step="0.01" name="monthly_cost_usd" placeholder="1200" /></label>
+            <label>CPU Utilization (%)<input required type="number" min="0" max="100" step="0.1" name="cpu_utilization_pct" placeholder="28" /></label>
+            <label>Memory Utilization (%)<input required type="number" min="0" max="100" step="0.1" name="memory_utilization_pct" placeholder="41" /></label>
+            <label>Criticality
+              <select name="criticality" required>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" name="auto_shutdown_enabled" />
+              Auto-shutdown enabled
+            </label>
+            <button type="submit" class="btn primary submit-btn">Add Workload</button>
+          </form>
+        </section>
+
+        <section class="panel recommendations-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Priority list</span>
+              <h2>Recommended Actions</h2>
+              <p>Start with the biggest monthly savings and move down the list.</p>
+            </div>
+          </div>
+          <ul id="recommendationsList" class="recommendations"></ul>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading panel-heading-inline">
+            <div>
+              <span class="section-kicker">Inventory</span>
+              <h2>Managed Workloads</h2>
+              <p>Use this list to compare teams, providers, utilization, and shutdown readiness.</p>
+            </div>
+            <span id="workloadCount" class="chip">0 workloads</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Workload</th>
+                  <th>Team</th>
+                  <th>Provider</th>
+                  <th>Cost</th>
+                  <th>CPU</th>
+                  <th>Memory</th>
+                  <th>Criticality</th>
+                  <th>Shutdown</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="workloadsBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="cardTemplate">
+      <article class="card">
+        <span class="label"></span>
+        <strong class="value"></strong>
+        <small class="note"></small>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

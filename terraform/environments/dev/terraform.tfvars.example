@@ -1,0 +1,17 @@
+prefix             = "realuse"
+location           = "centralindia"
+environment        = "dev"
+kubernetes_version = "1.30.7"
+node_vm_size       = "Standard_B2s"
+node_count         = 1
+max_pods           = 30
+log_retention_days = 7
+budget_amount_usd  = 15
+budget_alert_email = "you@example.com"
+
+tags = {
+  project     = "real-usecase"
+  environment = "dev"
+  owner       = "deepanshu"
+  ttl         = "ephemeral"
+}

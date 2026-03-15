@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloud-cost-advisor-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: cloud-cost-advisor.rules
+      rules:
+        - alert: CloudCostAdvisorHigh5xxRate
+          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High 5xx rate on cloud-cost-advisor"
+            description: "The dashboard API is returning elevated 5xx responses for 5 minutes."
+
+        - alert: CloudCostAdvisorPodRestartsHigh
+          expr: increase(kube_pod_container_status_restarts_total{namespace="dev",container="app"}[15m]) > 3
+          for: 10m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Frequent pod restarts for cloud-cost-advisor"
+            description: "Container restarts crossed threshold in the last 15 minutes."

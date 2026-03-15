@@ -1,0 +1,8 @@
+resources:
+  - serviceaccount-rbac.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml

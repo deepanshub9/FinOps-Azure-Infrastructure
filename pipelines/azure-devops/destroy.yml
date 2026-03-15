@@ -1,0 +1,51 @@
+trigger: none
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: confirmDestroy
+    displayName: Confirm full destroy
+    type: boolean
+    default: false
+
+variables:
+  - name: terraformDir
+    value: terraform/environments/dev
+  - name: tfBackendKey
+    value: dev.tfstate
+
+stages:
+  - stage: Destroy
+    condition: eq('${{ parameters.confirmDestroy }}', true)
+    jobs:
+      - job: DestroyInfra
+        steps:
+          - task: AzureCLI@2
+            displayName: Destroy Kubernetes namespace then Terraform destroy
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                cd $(terraformDir)
+
+                terraform init \
+                  -backend-config="resource_group_name=$(TF_BACKEND_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_BACKEND_STORAGE_ACCOUNT)" \
+                  -backend-config="container_name=$(TF_BACKEND_CONTAINER)" \
+                  -backend-config="key=$(tfBackendKey)"
+
+                RG_NAME=$(terraform output -raw resource_group_name || true)
+                AKS_NAME=$(terraform output -raw aks_cluster_name || true)
+
+                if [[ -n "${RG_NAME}" && -n "${AKS_NAME}" ]]; then
+                  az aks get-credentials --resource-group "$RG_NAME" --name "$AKS_NAME" --overwrite-existing || true
+                  kubectl delete namespace dev --ignore-not-found=true || true
+                  kubectl delete namespace monitoring --ignore-not-found=true || true
+                fi
+
+                terraform destroy -auto-approve \
+                  -var="budget_alert_email=$(BUDGET_ALERT_EMAIL)"

@@ -1,0 +1,4 @@
+resources:
+  - namespace-monitoring.yaml
+  - servicemonitor-cloud-cost-advisor.yaml
+  - prometheusrule-cloud-cost-advisor.yaml
