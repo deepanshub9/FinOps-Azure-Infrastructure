@@ -99,10 +99,10 @@ prometheus:
     resources:
       requests:
         cpu: 100m
-        memory: 256Mi
+        memory: 400Mi
       limits:
         cpu: 400m
-        memory: 512Mi
+        memory: 768Mi
 
 kubeStateMetrics:
   enabled: true

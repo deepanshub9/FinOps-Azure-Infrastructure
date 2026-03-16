@@ -2,3 +2,4 @@ resources:
   - namespace.yaml
   - network-policy-default-deny.yaml
   - clusterissuer-letsencrypt-staging.yaml
+  - clusterissuer-letsencrypt-prod.yaml

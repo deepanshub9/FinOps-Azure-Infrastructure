@@ -98,14 +98,14 @@ Cloud Cost Advisor is a FastAPI web application with a browser-based dashboard. 
 
 Before you start, make sure you have these tools installed on your machine:
 
-| Tool | Purpose |
-|---|---|
-| Azure CLI | Authenticate and manage Azure resources |
-| Terraform | Provision infrastructure |
-| kubectl | Manage Kubernetes workloads |
-| Helm | Install Kubernetes packages |
-| Docker | Build and push container images |
-| Git Bash or WSL | Run shell scripts on Windows |
+| Tool            | Purpose                                 |
+| --------------- | --------------------------------------- |
+| Azure CLI       | Authenticate and manage Azure resources |
+| Terraform       | Provision infrastructure                |
+| kubectl         | Manage Kubernetes workloads             |
+| Helm            | Install Kubernetes packages             |
+| Docker          | Build and push container images         |
+| Git Bash or WSL | Run shell scripts on Windows            |
 
 You will also need an active Azure subscription. An Azure for Students subscription works, but note that it restricts deployments to specific regions only.
 
@@ -247,6 +247,75 @@ This project is for anyone who wants to learn cloud and Kubernetes by doing rath
 - The Grafana admin password in the values file should be changed before any shared use
 - Let's Encrypt staging certificates are used by default — they are not trusted by browsers but are free and safe for learning
 - If you are on an Azure for Students subscription, you can only deploy to these regions: `francecentral`, `germanywestcentral`, `norwayeast`, `spaincentral`, `switzerlandnorth`
+
+---
+
+## 📸 Project in Action
+
+Here is what the project actually looks like once it is up and running. These are real screenshots taken from a live deployment — not mockups.
+
+**Cloud Cost Advisor — Application Dashboard**
+The main dashboard showing all tracked workloads, their monthly costs, CPU and memory utilisation, and the recommendations the engine has generated. This is what your team would use day to day.
+
+<img width="1328" height="3830" alt="Terraform Plan" src="https://github.com/user-attachments/assets/5cb73c34-ca2a-4a9b-8b85-a5a27077338a" />
+
+**Azure Resource Group — rg-realuse-dev**
+rg-realuse-dev — Created by Terraform via deploy.sh
+
+Purpose: Main project resources
+Location: francecentral
+Contains: AKS Cluster (aks-realuse-dev)
+Container Registry (acrrealusedevmfebl)
+Key Vault (kv-realuse-dev-mfebl)
+Log Analytics (law-realuse-dev)
+Virtual Network (vnet-realuse-dev)
+Action Group (ag-realuse-dev)
+Budget Alert (budget-realuse-dev)
+Managed by: Terraform — destroy.sh c
+
+<img width="1915" height="869" alt="Workload Insights" src="https://github.com/user-attachments/assets/d0acad9a-5d86-41a2-8c6e-ec5b78ca2396" />
+
+**Azure Resource Group — rg-tfstate-shared**
+This is the Azure Resource Group view 1. rg-tfstate-shared — Created by bootstrap-backend.sh
+
+Purpose: Stores Terraform remote state file
+Location: francecentral
+Contains: Storage Account (tfstate...)
+Blob Container (tfstate)
+Managed by: You manually (bootstrap Script).
+
+<img width="1912" height="873" alt="Azure Resource Group" src="https://github.com/user-attachments/assets/8a9fe125-880a-46e4-bf2d-ee11a78a5fb1" />
+
+MC_rg-realuse-dev_aks-realuse-dev_francecentral — Created automatically by AKS
+
+Purpose: AKS managed infrastructure
+Location: francecentral
+Contains: VM Scale Set (your actual node)
+Load Balancer (public entry point)
+Public IP (your app's external IP)
+Network interfaces
+OS Disks
+Managed by: Azure automatically — do NOT touch this manually
+
+<img width="1919" height="865" alt="Cloud Cost Advisor Dashboard" src="https://github.com/user-attachments/assets/c7dd4c8f-aa7a-42a4-b792-19b59533cffd" />
+
+**Load Balancer Dashboard**
+
+<img width="1905" height="831" alt="Grafana Kubernetes Cluster" src="https://github.com/user-attachments/assets/6bc45454-3208-4442-a7b9-4971333ff867" />
+
+**Kubernetes Dashboard**
+Pod health, restart counts, and resource usage across every namespace. This is where you would spot a crashing pod or a memory leak before it becomes a real problem.
+<img width="1538" height="924" alt="AKS Workloads" src="https://github.com/user-attachments/assets/ac389d03-6735-47c6-88a0-77c386a43997" />
+
+**Grafana — Node Exporter Dashboard**
+Real-time CPU, memory, disk, and network metrics for the AKS node. This is dashboard ID 1860 and it gives you a complete picture of how hard your single node is working at any point in time.
+
+<img width="1903" height="861" alt="Grafana Node Exporter" src="https://github.com/user-attachments/assets/1b24369b-2f44-46ee-b0bc-feb4e3dad877" />
+
+**Grafana — Alertmanager Dashboard**
+Alertmanager configured and firing real email alerts. When the application crosses a threshold — too many errors, too many pod restarts — you get an email. No manual checking required.
+
+<img width="1916" height="861" alt="Alertmanager" src="https://github.com/user-attachments/assets/10390ca6-b351-4139-a43d-e5f8f3d4c437" />
 
 ---
 

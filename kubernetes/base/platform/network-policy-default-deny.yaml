@@ -1,3 +1,7 @@
+# IMPORTANT: This policy only takes effect if AKS was provisioned with
+# --network-policy azure (or calico). Without that flag, this object exists
+# in the cluster but is NOT enforced. To enable, add network_policy = "azure"
+# to the AKS module in terraform/modules/aks/main.tf.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
