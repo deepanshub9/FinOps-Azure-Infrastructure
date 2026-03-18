@@ -4,7 +4,7 @@ metadata:
   name: cloud-cost-advisor
   namespace: dev
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels:
       app: cloud-cost-advisor
