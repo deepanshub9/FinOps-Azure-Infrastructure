@@ -1,9 +1,14 @@
 resources:
-  - serviceaccount-rbac.yaml
-  - configmap.yaml
-  - secretproviderclass-azure-kv.yaml
-  - deployment.yaml
-  - service.yaml
-  - ingress.yaml
-  - hpa.yaml
-  - pdb.yaml
+  - security/serviceaccount-rbac.yaml
+  - security/secretproviderclass-azure-kv.yaml
+  - policy/resourcequota.yaml
+  - policy/limitrange.yaml
+  - policy/networkpolicy-allow-ingress.yaml
+  - policy/networkpolicy-allow-egress-dns.yaml
+  - storage/persistentvolumeclaim.yaml
+  - core/configmap.yaml
+  - core/deployment.yaml
+  - core/service.yaml
+  - core/ingress.yaml
+  - scaling/hpa.yaml
+  - security/pdb.yaml
