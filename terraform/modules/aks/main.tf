@@ -23,12 +23,18 @@ resource "azurerm_kubernetes_cluster" "this" {
 
   network_profile {
     network_plugin    = "azure"
+    network_policy    = "azure"
     load_balancer_sku = "standard"
     outbound_type     = "loadBalancer"
   }
 
   oms_agent {
     log_analytics_workspace_id = var.log_analytics_workspace_id
+  }
+
+  key_vault_secrets_provider {
+    secret_rotation_enabled  = false
+    secret_rotation_interval = "2m"
   }
 
   workload_identity_enabled = true

@@ -5,8 +5,9 @@ kubernetes_version = "1.30.7"
 node_vm_size       = "Standard_B2s"
 node_count         = 1
 max_pods           = 30
-log_retention_days = 7
+log_retention_days = 30
 budget_amount_usd  = 15
+budget_start_date  = "2026-03-01T00:00:00Z"
 budget_alert_email = "you@example.com"
 
 tags = {

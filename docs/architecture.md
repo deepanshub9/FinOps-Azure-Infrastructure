@@ -13,11 +13,21 @@
 ## Kubernetes Layer
 
 - `Namespace` with restricted pod security labels
-- `NetworkPolicy` default deny
+- `NetworkPolicy` model: namespace default deny + app-specific ingress/egress allow rules
 - `ServiceAccount` + Role/RoleBinding
+- `ResourceQuota` and `LimitRange` for namespace governance and sane defaults
 - `Deployment`, `Service`, `Ingress`, `HPA`, `PDB` for `cloud-cost-advisor`
+- `PersistentVolumeClaim` for SQLite data persistence
 - `ClusterIssuer` for cert-manager (Let's Encrypt staging)
 - `ServiceMonitor` and `PrometheusRule` for application metrics and alerting
+
+## Kubernetes Manifest Layout
+
+- `kubernetes/base/app/core`: workload + traffic (`Deployment`, `Service`, `Ingress`, `ConfigMap`)
+- `kubernetes/base/app/security`: service identity, RBAC, disruption controls, Key Vault CSI provider config
+- `kubernetes/base/app/scaling`: autoscaling objects (`HPA`)
+- `kubernetes/base/app/storage`: persistence objects (`PersistentVolumeClaim`)
+- `kubernetes/base/app/policy`: guardrails (`ResourceQuota`, `LimitRange`, app network policies)
 
 ## Application Layer
 

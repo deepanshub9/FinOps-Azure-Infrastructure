@@ -217,7 +217,7 @@ ingress-nginx (Kubernetes)
     ▼
 cloud-cost-advisor (FastAPI Pod)
     │
-    ├── SQLite database (ephemeral volume)
+    ├── SQLite database (PVC-backed volume)
     ├── /metrics → Prometheus scrapes here
     └── /api/v1/ → REST API endpoints
 

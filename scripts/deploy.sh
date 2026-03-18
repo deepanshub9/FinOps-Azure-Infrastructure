@@ -19,7 +19,12 @@ terraform init -reconfigure \
   -backend-config="container_name=${TF_BACKEND_CONTAINER}" \
   -backend-config="key=dev.tfstate"
 
-terraform apply -auto-approve -var="budget_alert_email=${BUDGET_ALERT_EMAIL}"
+TFVARS_ARG=()
+if [[ -f "${TF_DIR}/terraform.tfvars" ]]; then
+  TFVARS_ARG+=("-var-file=${TF_DIR}/terraform.tfvars")
+fi
+
+terraform apply -auto-approve "${TFVARS_ARG[@]}" -var="budget_alert_email=${BUDGET_ALERT_EMAIL}"
 
 RG_NAME="$(terraform output -raw resource_group_name)"
 AKS_NAME="$(terraform output -raw aks_cluster_name)"

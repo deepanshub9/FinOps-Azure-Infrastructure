@@ -35,12 +35,17 @@ variable "max_pods" {
 
 variable "log_retention_days" {
   type    = number
-  default = 30 # PerGB2018 SKU minimum; cannot be lowered further
+  default = 30
 }
 
 variable "budget_amount_usd" {
   type    = number
   default = 15
+}
+
+variable "budget_start_date" {
+  type    = string
+  default = "2026-03-01T00:00:00Z"
 }
 
 variable "budget_alert_email" {

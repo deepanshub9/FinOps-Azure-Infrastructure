@@ -4,7 +4,7 @@ metadata:
   name: cloud-cost-advisor
   namespace: dev
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: cloud-cost-advisor
@@ -83,7 +83,8 @@ spec:
               readOnly: true
       volumes:
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: cloud-cost-advisor-data
         - name: tmp
           emptyDir: {}
         - name: akv-secrets
